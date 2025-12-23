@@ -1,4 +1,6 @@
 
+export type Timeframe = 'M1' | 'M5' | 'M15' | 'H1' | 'H4' | 'D1';
+
 export interface Candle {
   time: number; // Unix timestamp
   open: number;
@@ -50,6 +52,7 @@ export interface IndicatorVisibility {
   macd: boolean;
   pivots: boolean;
   zones: boolean;
+  sessions: boolean;
 }
 
 export type DrawingToolType = 'NONE' | 'TRENDLINE' | 'RECTANGLE' | 'HLINE';
@@ -59,6 +62,15 @@ export interface DrawingObject {
   type: DrawingToolType;
   points: { time: number; price: number }[];
   color: string;
+}
+
+export interface ChartSettings {
+  upColor: string;
+  downColor: string;
+  showGridVert: boolean;
+  showGridHorz: boolean;
+  watermark: string;
+  rightOffset: number;
 }
 
 export interface PivotPoints {
@@ -74,5 +86,5 @@ export interface SDZone {
   priceStart: number;
   priceEnd: number;
   timeStart: number;
-  timeEnd?: number; // Ongoing if undefined
+  timeEnd?: number; 
 }
