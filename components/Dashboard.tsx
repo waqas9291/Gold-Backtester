@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Candle, BacktestResults, StrategyParams, IndicatorVisibility, DrawingToolType, DrawingObject, ChartSettings } from '../types';
+import { Candle, BacktestResults, StrategyParams, IndicatorVisibility, DrawingTool, DrawingObject, ChartSettings } from '../types';
 import TradingViewChart from './TradingViewChart';
 import { 
   DollarSign, Percent, TrendingUp, TrendingDown, Clock, 
@@ -14,8 +14,8 @@ interface DashboardProps {
   analysis: string;
   params: StrategyParams;
   indicatorVisibility: IndicatorVisibility;
-  activeTool: DrawingToolType;
-  setActiveTool: (t: DrawingToolType) => void;
+  activeTool: DrawingTool;
+  setActiveTool: (t: DrawingTool) => void;
   drawings: DrawingObject[];
   setDrawings: React.Dispatch<React.SetStateAction<DrawingObject[]>>;
   chartSettings: ChartSettings;
@@ -49,15 +49,15 @@ const Dashboard: React.FC<DashboardProps> = ({
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
         <div className="xl:col-span-3 space-y-6">
           <div className="bg-[#10141b] rounded-2xl border border-slate-800 shadow-2xl overflow-hidden p-1">
+             {/* Fix: Match TradingViewChart props */}
              <TradingViewChart 
                data={data} 
                trades={results.trades} 
-               visibleIndicators={indicatorVisibility}
-               activeTool={activeTool}
-               setActiveTool={setActiveTool}
                drawings={drawings}
                setDrawings={setDrawings}
-               settings={chartSettings}
+               activeTool={activeTool}
+               magnetMode={true}
+               timeframe="15m"
              />
           </div>
 
