@@ -1,0 +1,5 @@
+{
+  "name": "XAUUSD Pro Backtester",
+  "description": "A high-performance gold trading backtester featuring RSI, SMA indicators, and AI-powered strategy analysis using Gemini.",
+  "requestFramePermissions": []
+}
