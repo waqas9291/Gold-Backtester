@@ -2,13 +2,14 @@
 import { RSI, SMA, EMA } from 'technicalindicators';
 import { Candle, StrategyParams, BacktestResults, Trade, PivotPoints, SDZone, Timeframe } from '../types';
 
+// Fix: Update keys to match Timeframe type '1m', '5m', etc.
 const TIMEFRAME_TO_SECONDS: Record<Timeframe, number> = {
-  'M1': 60,
-  'M5': 300,
-  'M15': 900,
-  'H1': 3600,
-  'H4': 14400,
-  'D1': 86400,
+  '1m': 60,
+  '5m': 300,
+  '15m': 900,
+  '1h': 3600,
+  '4h': 14400,
+  '1d': 86400,
 };
 
 export const runBacktest = (
@@ -76,7 +77,7 @@ export const runBacktest = (
           exitTime: candle.time,
           profit,
           status: 'CLOSED',
-          reason
+          reason // Now valid as reason is added to Trade type
         });
         currentTrade = null;
         equityCurve.push({ time: candle.time, value: balance });
@@ -178,7 +179,8 @@ export const detectSupplyDemandZones = (data: Candle[]): SDZone[] => {
   return zones.slice(-3); 
 };
 
-export const generateGoldData = (count: number, timeframe: Timeframe = 'M15'): Candle[] => {
+// Fix: Change 'M15' to '15m' to match Timeframe type
+export const generateGoldData = (count: number, timeframe: Timeframe = '15m'): Candle[] => {
   const data: Candle[] = [];
   let price = 2100.0;
   const interval = TIMEFRAME_TO_SECONDS[timeframe];
