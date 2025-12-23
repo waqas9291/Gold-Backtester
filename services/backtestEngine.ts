@@ -1,11 +1,24 @@
 
 import { RSI, SMA, EMA } from 'technicalindicators';
-import { Candle, StrategyParams, BacktestResults, Trade, PivotPoints, SDZone } from '../types';
+import { Candle, StrategyParams, BacktestResults, Trade, PivotPoints, SDZone, Timeframe } from '../types';
+
+const TIMEFRAME_TO_SECONDS: Record<Timeframe, number> = {
+  'M1': 60,
+  'M5': 300,
+  'M15': 900,
+  'H1': 3600,
+  'H4': 14400,
+  'D1': 86400,
+};
 
 export const runBacktest = (
   data: Candle[],
   params: StrategyParams
 ): BacktestResults => {
+  if (data.length < params.smaPeriod) {
+    return { totalTrades: 0, winRate: 0, totalProfit: 0, trades: [], finalBalance: params.initialBalance, maxDrawdown: 0, equityCurve: [] };
+  }
+  
   const prices = data.map(c => c.close);
   
   const rsiValues = RSI.calculate({ values: prices, period: params.rsiPeriod });
@@ -121,7 +134,6 @@ export const runBacktest = (
 
 export const calculatePivotPoints = (data: Candle[]): PivotPoints | null => {
   if (data.length < 50) return null;
-  // Use last 100 candles to simulate "Daily" range for this scale
   const slice = data.slice(-100);
   const h = Math.max(...slice.map(c => c.high));
   const l = Math.min(...slice.map(c => c.low));
@@ -140,15 +152,12 @@ export const calculatePivotPoints = (data: Candle[]): PivotPoints | null => {
 export const detectSupplyDemandZones = (data: Candle[]): SDZone[] => {
   const zones: SDZone[] = [];
   const lookback = 5;
+  if (data.length < lookback + 10) return [];
   
   for (let i = lookback; i < data.length - 5; i++) {
     const prevRange = Math.max(...data.slice(i - lookback, i).map(c => c.high)) - Math.min(...data.slice(i - lookback, i).map(c => c.low));
-    const currentMove = data[i+1].close - data[i].open;
-    
-    // Rally-Base-Drop or Drop-Base-Rally identification
-    // If next 3 candles move significantly in one direction
-    const futureMove = data[i+3].close - data[i].close;
     const volatility = prevRange / lookback;
+    const futureMove = data[i+3].close - data[i].close;
 
     if (futureMove > volatility * 8) {
       zones.push({
@@ -166,46 +175,49 @@ export const detectSupplyDemandZones = (data: Candle[]): SDZone[] => {
       });
     }
   }
-  // Filter to keep only the most recent distinct zones
   return zones.slice(-3); 
 };
 
-export const generateGoldData = (count: number): Candle[] => {
+export const generateGoldData = (count: number, timeframe: Timeframe = 'M15'): Candle[] => {
   const data: Candle[] = [];
   let price = 2100.0;
+  const interval = TIMEFRAME_TO_SECONDS[timeframe];
   let time = Math.floor(new Date('2024-01-01T00:00:00Z').getTime() / 1000);
+
+  // Volatility scales with sqrt of time
+  const timeframeMultiplier = Math.sqrt(interval / 900);
 
   for (let i = 0; i < count; i++) {
     const date = new Date(time * 1000);
     const hour = date.getUTCHours();
     const day = date.getUTCDay();
 
+    // Skip weekends
     if (day === 5 && hour >= 22) {
       time += (48 + (24 - hour)) * 3600; 
-      price += (Math.random() - 0.5) * 12;
+      price += (Math.random() - 0.5) * 12 * timeframeMultiplier;
     }
 
     let volMult = 1.0;
-    if (hour >= 13 && hour <= 17) volMult = 2.4;
-    else if (hour >= 8 && hour < 13) volMult = 1.6;
-    else if (hour > 17 && hour < 21) volMult = 1.4;
-    else if (hour >= 0 && hour < 7) volMult = 0.7;
+    if (hour >= 13 && hour <= 17) volMult = 2.4; // NY
+    else if (hour >= 8 && hour < 13) volMult = 1.6; // London
+    else if (hour > 17 && hour < 21) volMult = 1.4; // NY late
+    else if (hour >= 0 && hour < 7) volMult = 0.7; // Asia
     else volMult = 0.5;
 
-    const baseVolatility = 0.8 + Math.random() * 1.5;
+    const baseVolatility = (0.8 + Math.random() * 1.5) * timeframeMultiplier;
     const sessionVolatility = baseVolatility * volMult;
-    const cycleTrend = Math.sin(i / 150) * 0.4;
-    const smallTrend = Math.cos(i / 20) * 0.2;
+    const cycleTrend = Math.sin(i / (150 / timeframeMultiplier)) * 0.4;
     
     const open = price;
-    const change = (Math.random() - 0.5 + cycleTrend + smallTrend) * sessionVolatility;
+    const change = (Math.random() - 0.5 + cycleTrend) * sessionVolatility;
     const close = price + change;
     const high = Math.max(open, close) + Math.random() * (sessionVolatility * 0.6);
     const low = Math.min(open, close) - Math.random() * (sessionVolatility * 0.6);
 
-    data.push({ time, open, high, low, close, volume: Math.random() * 8000 * volMult });
+    data.push({ time, open, high, low, close, volume: Math.random() * 8000 * volMult * timeframeMultiplier });
     price = close;
-    time += 900;
+    time += interval;
   }
   return data;
 };
