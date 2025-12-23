@@ -1,13 +1,28 @@
 
-export type Timeframe = 'M1' | 'M5' | 'M15' | 'H1' | 'H4' | 'D1';
+export type Timeframe = '1m' | '5m' | '15m' | '1h' | '4h' | '1d';
+export type DrawingTool = 'CURSOR' | 'TRENDLINE' | 'RECTANGLE' | 'HLINE' | 'FIB' | 'TEXT' | 'ERASER';
+export type DrawingToolType = DrawingTool;
 
 export interface Candle {
-  time: number; // Unix timestamp
+  time: number;
   open: number;
   high: number;
   low: number;
   close: number;
   volume: number;
+}
+
+export interface DrawingPoint {
+  time: number;
+  price: number;
+}
+
+export interface DrawingObject {
+  id: string;
+  type: DrawingTool;
+  points: DrawingPoint[];
+  color: string;
+  text?: string;
 }
 
 export interface Trade {
@@ -19,17 +34,18 @@ export interface Trade {
   exitTime: number;
   profit: number;
   status: 'OPEN' | 'CLOSED';
+  // Add reason property for trade history
   reason?: string;
 }
 
-export interface BacktestResults {
-  totalTrades: number;
-  winRate: number;
-  totalProfit: number;
-  trades: Trade[];
-  finalBalance: number;
-  maxDrawdown: number;
-  equityCurve: { time: number; value: number }[];
+export interface TerminalState {
+  timeframe: Timeframe;
+  activeTool: DrawingTool;
+  magnetMode: boolean;
+  isRightSidebarOpen: boolean;
+  bottomPanelTab: 'STRATEGY' | 'LOG';
+  isReplayMode: boolean;
+  replayIndex: number;
 }
 
 export interface StrategyParams {
@@ -44,33 +60,14 @@ export interface StrategyParams {
   riskPercent: number;
 }
 
-export interface IndicatorVisibility {
-  sma: boolean;
-  ema: boolean;
-  rsi: boolean;
-  bollinger: boolean;
-  macd: boolean;
-  pivots: boolean;
-  zones: boolean;
-  sessions: boolean;
-}
-
-export type DrawingToolType = 'NONE' | 'TRENDLINE' | 'RECTANGLE' | 'HLINE';
-
-export interface DrawingObject {
-  id: string;
-  type: DrawingToolType;
-  points: { time: number; price: number }[];
-  color: string;
-}
-
-export interface ChartSettings {
-  upColor: string;
-  downColor: string;
-  showGridVert: boolean;
-  showGridHorz: boolean;
-  watermark: string;
-  rightOffset: number;
+export interface BacktestResults {
+  totalTrades: number;
+  winRate: number;
+  totalProfit: number;
+  trades: Trade[];
+  finalBalance: number;
+  maxDrawdown: number;
+  equityCurve: { time: number; value: number }[];
 }
 
 export interface PivotPoints {
@@ -86,5 +83,16 @@ export interface SDZone {
   priceStart: number;
   priceEnd: number;
   timeStart: number;
-  timeEnd?: number; 
+}
+
+export interface IndicatorVisibility {
+  sma: boolean;
+  rsi: boolean;
+  pivots: boolean;
+  zones: boolean;
+}
+
+export interface ChartSettings {
+  theme: 'dark' | 'light';
+  showVolume: boolean;
 }
