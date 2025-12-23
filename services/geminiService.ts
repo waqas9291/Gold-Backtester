@@ -1,4 +1,3 @@
-
 import { GoogleGenAI } from "@google/genai";
 import { BacktestResults, StrategyParams } from "../types";
 
@@ -24,8 +23,9 @@ export const analyzeStrategy = async (results: BacktestResults, params: Strategy
   `;
 
   try {
+    // Fix: Using gemini-3-pro-preview for complex quantitative reasoning tasks
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-3-pro-preview',
       contents: prompt,
     });
     return response.text || "Unable to generate analysis at this time.";
