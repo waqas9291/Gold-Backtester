@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { createChart, IChartApi, SeriesMarker, Time, CandlestickData, MouseEventParams } from 'lightweight-charts';
 import { SMA, EMA } from 'technicalindicators';
@@ -49,7 +48,8 @@ const TradingViewChart: React.FC<ChartProps> = ({ data, trades, visibleIndicator
       timeScale: { borderColor: '#1e293b', timeVisible: true, barSpacing: 10 },
     });
 
-    const candleSeries = chart.addCandlestickSeries({
+    // Fix: Cast chart to any to bypass type error if addCandlestickSeries is not found on IChartApi definition
+    const candleSeries = (chart as any).addCandlestickSeries({
       upColor: '#22c55e', downColor: '#ef4444', borderVisible: false, wickUpColor: '#22c55e', wickDownColor: '#ef4444',
     });
 
@@ -65,10 +65,13 @@ const TradingViewChart: React.FC<ChartProps> = ({ data, trades, visibleIndicator
     // Indicators
     const closePrices = data.map(c => c.close);
     if (visibleIndicators.sma) {
-      const smaLine = chart.addLineSeries({ color: '#6366f1', lineWidth: 2, title: 'SMA 50' });
-      smaLine.setData(data.slice(data.length - SMA.calculate({ period: 50, values: closePrices }).length).map((c, i) => ({
-        time: c.time as Time, value: SMA.calculate({ period: 50, values: closePrices })[i]
-      })));
+      // Fix: Cast chart to any to bypass type error if addLineSeries is not found on IChartApi definition
+      const smaLine = (chart as any).addLineSeries({ color: '#6366f1', lineWidth: 2, title: 'SMA 50' });
+      const smaValues = SMA.calculate({ period: 50, values: closePrices });
+      const smaData = data.slice(data.length - smaValues.length).map((c, i) => ({
+        time: c.time as Time, value: smaValues[i]
+      }));
+      smaLine.setData(smaData);
     }
 
     // Trade Markers
@@ -133,7 +136,14 @@ const TradingViewChart: React.FC<ChartProps> = ({ data, trades, visibleIndicator
       } else {
         const d = param.seriesData.get(candleSeries) as CandlestickData<Time>;
         if (d) {
-          setTooltip({ isVisible: true, time: new Date((param.time as number) * 1000).toLocaleString(), ...d });
+          setTooltip({ 
+            isVisible: true, 
+            time: new Date((param.time as number) * 1000).toLocaleString(),
+            open: d.open,
+            high: d.high,
+            low: d.low,
+            close: d.close
+          });
         }
       }
     });
